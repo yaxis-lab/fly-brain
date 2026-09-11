@@ -1,24 +1,35 @@
-import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
 
-  server: {
-    port: 5173,
+  base: "",
 
-    proxy: {
-      "/api": {
-        target: "http://localhost:8000",
-        changeOrigin: true,
-      },
-    },
+  resolve: {
+    conditions: [
+      "neuroglancer/datasource:none_by_default",
+      "neuroglancer/datasource/precomputed:enabled",
+    ],
+  },
+
+  worker: {
+    format: "es",
   },
 
   build: {
-    outDir: "dist",
-    emptyOutDir: true,
+    chunkSizeWarningLimit: 2 * 1024 * 1024,
+  },
+
+  optimizeDeps: {
+    entries: [
+      "index.html",
+      "node_modules/neuroglancer/src/main.bundle.js",
+      "node_modules/neuroglancer/src/async_computation.bundle.js",
+      "node_modules/neuroglancer/src/chunk_worker.bundle.js",
+    ],
+
+    exclude: ["neuroglancer"],
   },
 });
