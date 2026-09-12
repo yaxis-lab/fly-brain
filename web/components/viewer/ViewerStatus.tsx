@@ -13,7 +13,7 @@ export function ViewerStatus({ isLoading, errorMessage }: ViewerStatusProps) {
     : "Loading CNS meshes...";
 
   return (
-    <div className="absolute top-3 left-3 px-2 py-3 border pointer-events-none">
+    <div className="absolute top-3 right-3 px-2 py-3 border pointer-events-none">
       {message}
     </div>
   );
