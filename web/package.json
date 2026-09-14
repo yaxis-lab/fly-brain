@@ -11,10 +11,13 @@
   "dependencies": {
     "@react-three/drei": "^10.7.8",
     "@react-three/fiber": "^9.7.0",
+    "@types/bun": "^1.4.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
+    "gl-matrix": "^3.4.4",
     "lucide-react": "^1.45.0",
+    "neuroglancer": "^2.41.2",
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",

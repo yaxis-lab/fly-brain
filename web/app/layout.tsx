@@ -11,7 +11,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${ibmSans.variable} ${ibmMono.variable} font-ibm-sans h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${ibmSans.variable} ${ibmMono.variable} font-ibm-sans h-full antialiased bg-white`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

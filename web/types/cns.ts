@@ -12,6 +12,13 @@ export interface MeshData {
   readonly indices: Uint32Array;
 }
 
+export interface NeuronMeshData {
+  readonly bodyId: string;
+  readonly lod: number;
+  readonly vertices: Float32Array;
+  readonly indices: Uint32Array;
+}
+
 export interface CNSMesh {
   readonly id: string;
   readonly part: CNSPart;
