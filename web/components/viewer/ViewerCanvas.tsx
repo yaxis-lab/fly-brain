@@ -11,9 +11,9 @@ export function ViewerCanvas({ meshes }: ViewerCanvasProps) {
   return (
     <Canvas
       camera={{
-        position: [0, 0, 100],
-        near: 0.01,
-        far: 1_000_000,
+        position: [0, 0, 1000],
+        near: 0.1,
+        far: 10_000_000,
       }}
       gl={{
         antialias: true,
@@ -21,7 +21,6 @@ export function ViewerCanvas({ meshes }: ViewerCanvasProps) {
       }}
     >
       <ambientLight intensity={1.5} />
-
       <directionalLight position={[1, 1, 1]} intensity={2} />
 
       <CNSScene meshes={meshes} />
