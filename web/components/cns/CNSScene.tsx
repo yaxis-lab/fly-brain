@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { CNS_CONFIG } from "@/config/cns";
 import type { CNSMesh } from "@/types/cns";
 import { CNSMeshes } from "./CNSMeshes";
-import { TestNeuronBody } from "./neuron/TestNeuronFragment";
+import { Neuron } from "./neuron/Neuron";
 
 interface CNSSceneProps {
   readonly meshes: readonly CNSMesh[];
@@ -79,7 +79,7 @@ function CNSContent({ meshes }: CNSContentProps) {
   return (
     <group ref={group} scale={CNS_CONFIG.coordinateSystem.scale}>
       <CNSMeshes meshes={meshes} />
-      <TestNeuronBody />
+      <Neuron />
     </group>
   );
 }
@@ -88,7 +88,6 @@ export function CNSScene({ meshes }: CNSSceneProps) {
   return (
     <>
       <CNSContent meshes={meshes} />
-
       <OrbitControls makeDefault enableDamping dampingFactor={0.08} />
     </>
   );
