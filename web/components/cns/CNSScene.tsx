@@ -28,7 +28,6 @@ function CNSContent({ meshes }: CNSContentProps) {
     }
 
     const box = new THREE.Box3().setFromObject(group.current);
-
     if (box.isEmpty()) {
       return;
     }
@@ -42,17 +41,14 @@ function CNSContent({ meshes }: CNSContentProps) {
     const radius = size.length() * 0.5;
 
     const { camera, controls } = getState();
-
     if (!(camera instanceof THREE.PerspectiveCamera)) {
       return;
     }
 
     const fovRadians = THREE.MathUtils.degToRad(camera.fov);
-
     const distance = (radius / Math.tan(fovRadians * 0.5)) * 1.25;
 
     camera.position.set(center.x, center.y, center.z + distance);
-
     camera.near = Math.max(radius / 1000, 0.1);
     camera.far = Math.max(distance + radius * 4, 1_000_000);
 
@@ -65,15 +61,6 @@ function CNSContent({ meshes }: CNSContentProps) {
       orbitControls.target.copy(center);
       orbitControls.update();
     }
-
-    console.log("[CNS camera fit]", {
-      center: center.toArray(),
-      size: size.toArray(),
-      radius,
-      distance,
-      camera: camera.position.toArray(),
-      target: orbitControls?.target.toArray(),
-    });
   }, [getState, meshes]);
 
   return (
