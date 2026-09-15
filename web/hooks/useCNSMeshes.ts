@@ -4,6 +4,7 @@ import { CNS_CONFIG } from "@/config/cns";
 import type { CNSMesh } from "@/types/cns";
 import { loadNgMesh } from "@/lib/meshes/ngmesh";
 import { createMeshGeometry } from "@/lib/meshes/geometry";
+import { createMeshStream } from "@/lib/meshes/stream";
 
 export interface CNSMeshState {
   readonly meshes: readonly CNSMesh[];
@@ -12,8 +13,8 @@ export interface CNSMeshState {
 }
 
 export function useCNSMeshes(): CNSMeshState {
-  const [meshes, setMeshes] = useState<readonly CNSMesh[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [meshes, setMeshes] = useState<CNSMesh[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,13 +22,13 @@ export function useCNSMeshes(): CNSMeshState {
 
     async function loadMeshes(): Promise<void> {
       try {
-        setIsLoading(true);
         setErrorMessage(null);
 
-        const loadedMeshes = await Promise.all(
-          CNS_CONFIG.meshes.map(async (spec): Promise<CNSMesh> => {
-            const data = await loadNgMesh(spec.baseUrl, spec.segment);
+        const stream = createMeshStream({
+          items: CNS_CONFIG.meshes,
 
+          load: async (spec): Promise<CNSMesh> => {
+            const data = await loadNgMesh(spec.baseUrl, spec.segment);
             const geometry = createMeshGeometry(data);
 
             return {
@@ -36,18 +37,23 @@ export function useCNSMeshes(): CNSMeshState {
               segment: spec.segment,
               geometry,
             };
-          }),
-        );
+          },
 
-        if (isCancelled) {
-          for (const mesh of loadedMeshes) {
-            mesh.geometry.dispose();
-          }
+          onItemLoaded: (mesh) => {
+            if (isCancelled) {
+              mesh.geometry.dispose();
+              return;
+            }
 
-          return;
+            setMeshes((current) => [...current, mesh]);
+          },
+        });
+
+        await stream.start();
+
+        if (!isCancelled) {
+          setIsLoading(false);
         }
-
-        setMeshes(loadedMeshes);
       } catch (error) {
         if (!isCancelled) {
           const message =
@@ -56,9 +62,6 @@ export function useCNSMeshes(): CNSMeshState {
               : "Failed to load CNS meshes";
 
           setErrorMessage(message);
-        }
-      } finally {
-        if (!isCancelled) {
           setIsLoading(false);
         }
       }

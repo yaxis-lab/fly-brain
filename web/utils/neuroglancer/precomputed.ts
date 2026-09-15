@@ -34,8 +34,6 @@ export interface MultiscaleManifest {
 
 export class PrecomputedMeshSource {
   private segmentation_info = segmentation_multires_meshes_info;
-  //private readonly meshBaseUrl =
-  //  "https://storage.googleapis.com/flyem-male-cns/v1.0/segmentation/multi-res-meshes";
   private readonly meshBaseUrl = "/api/male-cns/multi-res-meshes";
 
   getShardLocation(bodyId: bigint) {
