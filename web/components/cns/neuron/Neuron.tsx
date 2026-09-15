@@ -7,25 +7,32 @@ import { useFragmentStream } from "@/hooks/useFragments";
 import { MeshFragment } from "@/utils/neuroglancer/mesh/types";
 import { PrecomputedMeshSource } from "@/utils/neuroglancer/precomputed";
 import { loadMultiscaleManifest } from "@/utils/neuroglancer/mesh/manifest";
+import { useNeurons } from "@/hooks/useNeuron";
+export interface NeuronProps {
+  lod?: number;
+}
 
-const BODY_ID = BigInt(12781);
-const LOD = 3;
-
-export function Neuron() {
+export function Neuron({ lod = 3 }: NeuronProps) {
   const source = useMemo(() => new PrecomputedMeshSource(), []);
   const { createFragmentStream } = useFragmentStream();
+  const { selectedNeurons } = useNeurons();
   const [fragments, setFragments] = useState<Map<number, MeshFragment>>(
     () => new Map(),
   );
+  const bodyId = useMemo(() => {
+    if (selectedNeurons[0]) return selectedNeurons[0].bodyId;
+  }, [selectedNeurons]);
 
   useEffect(() => {
     let active = true;
 
     async function loadNeuron(): Promise<void> {
+      if (!bodyId) return;
+
       const { manifest, fragmentCount } = await loadMultiscaleManifest(
         source,
-        BODY_ID,
-        LOD,
+        BigInt(bodyId),
+        lod,
       );
 
       if (!active) return;
@@ -34,8 +41,8 @@ export function Neuron() {
         source,
         manifest,
         request: {
-          bodyId: BODY_ID,
-          lod: LOD,
+          bodyId: BigInt(bodyId),
+          lod: lod,
           fragmentCount,
         },
         onFragmentLoaded: (fragment) => {
@@ -57,14 +64,15 @@ export function Neuron() {
     return () => {
       active = false;
     };
-  }, [source, createFragmentStream]);
+  }, [source, createFragmentStream, bodyId, lod]);
 
+  if (!bodyId) return null;
   return (
     <>
       {Array.from(fragments.values()).map((fragment) => (
         <NeuronFragment
           key={fragment.id}
-          bodyId={BODY_ID}
+          bodyId={BigInt(bodyId)}
           positions={fragment.positions}
           indices={fragment.indices}
         />

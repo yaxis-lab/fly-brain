@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { geistMono, geistSans, ibmMono, ibmSans } from "./font";
+import { TRPCProvider } from "@/trpc/client";
+import { NeuronProvider } from "@/context/NeuronContext";
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -13,7 +15,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${ibmSans.variable} ${ibmMono.variable} font-ibm-sans h-full antialiased bg-white`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <TRPCProvider>
+        <NeuronProvider>
+          <body className="min-h-full flex flex-col">{children}</body>
+        </NeuronProvider>
+      </TRPCProvider>
     </html>
   );
 }
