@@ -12,5 +12,8 @@ wheels/
 .vscode
 .env
 
+/output
 /data
 /neuroglancer
+
+*.avi
