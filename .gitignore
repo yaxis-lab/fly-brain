@@ -15,5 +15,7 @@ wheels/
 /output
 /data
 /neuroglancer
+/notebooks
+/Drosophila_brain_model
 
 *.avi

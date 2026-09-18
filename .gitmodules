@@ -1,0 +1,3 @@
+[submodule "flygym"]
+	path = flygym
+	url = https://github.com/NeLy-EPFL/flygym.git
