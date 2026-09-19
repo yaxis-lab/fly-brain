@@ -20,7 +20,8 @@ class FlyBrainSimulation:
         )
         self.visual_system = VisualSystem(device=device)
         self.vision_viewer: VisionViewer | None = None
-        self._next_visual_update = self.visual_system.DT
+        self._visual_dt = self.visual_system.DT
+        self._next_visual_update = self._visual_dt
 
     @property
     def time(self) -> float:
@@ -32,6 +33,8 @@ class FlyBrainSimulation:
 
     def step(self) -> None:
         self.simulation.step()
+        if self.simulation.time < self._next_visual_update:
+            return
         vision_input = self.vision.update()
         visual_output = self.visual_system.update(
             vision_input,
@@ -45,21 +48,22 @@ class FlyBrainSimulation:
             vision=vision_input,
             visual_system=visual_output,
         )
+        self._next_visual_update += self._visual_dt
 
     def warmup(self, duration: float) -> None:
         self.simulation.warmup(duration)
-        vision_input = self.vision.update()
-        visual_output = self.visual_system.update(
-            vision_input,
-        )
-        if self.vision_viewer is None:
-            self.vision_viewer = VisionViewer(
-                retina=self.vision.retina, eye=0, cell_type="R1"
-            )
-        self.vision_viewer.update(
-            vision=vision_input,
-            visual_system=visual_output,
-        )
+        #vision_input = self.vision.update()
+        #visual_output = self.visual_system.update(
+        #    vision_input,
+        #)
+        #if self.vision_viewer is None:
+        #    self.vision_viewer = VisionViewer(
+        #        retina=self.vision.retina, eye=0, cell_type="R1"
+        #    )
+        #self.vision_viewer.update(
+        #    vision=vision_input,
+        #    visual_system=visual_output,
+        #)
         self._next_visual_update = self.simulation.time + self.visual_system.DT
 
     def reset(self) -> None:
