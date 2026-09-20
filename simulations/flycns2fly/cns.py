@@ -1,4 +1,5 @@
 from dataclasses import dataclass, asdict, field
+from pathlib import Path
 from textwrap import dedent
 from typing import cast
 
@@ -15,6 +16,8 @@ from brian2 import (
 from brian2.units.fundamentalunits import Quantity
 
 from .connectome import Connectome
+from .sensors.cns_vision import CNSVision, CNSVisionConfig
+from .sensors.visual_targets import VisualTargets
 
 
 @dataclass(kw_only=True)
@@ -89,7 +92,13 @@ class CNSConfig:
 
 
 class CNS:
-    def __init__(self, connectome: Connectome, config: CNSConfig | None = None) -> None:
+    def __init__(
+        self,
+        connectome: Connectome,
+        annotations_path: str | Path,
+        config: CNSConfig | None = None,
+        visual_config: CNSVisionConfig | None = None,
+    ) -> None:
         self.cns_config = config if config is not None else CNSConfig()
         self.connectome = connectome
         self.neurons = NeuronGroup(
@@ -123,8 +132,38 @@ class CNS:
             self.synapses,
             self.spike_monitor,
         )
-
+        self.visual_targets = VisualTargets(
+            annotations_path=annotations_path,
+            connectome=self.connectome,
+        )
+        self.visual_input = CNSVision(
+            neurons=self.neurons,
+            target_indices=self.visual_targets.targets,
+            synaptic_weight=self.cns_config.w_syn,
+            synaptic_delay=self.cns_config.t_dly,
+            synaptic_rate_factor=self.cns_config.f_poi,
+            config=visual_config,
+        )
+        self.network.add(
+            self.visual_input.left_r16,
+            self.visual_input.right_r16,
+            self.visual_input.left_r7,
+            self.visual_input.right_r7,
+            self.visual_input.left_r8,
+            self.visual_input.right_r8,
+            *self.visual_input.synapses,
+        )
         self.poisson_inputs = []
+
+    def update_visual_input(
+        self,
+        activity,
+        biases,
+    ) -> None:
+        self.visual_input.update(
+            activity=activity,
+            biases=biases,
+        )
 
     def add_poisson_inputs(
         self,

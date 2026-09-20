@@ -7,6 +7,16 @@ from flyvis import NetworkView, results_dir
 
 from .sensors.vision import VisionInput
 
+RETINA_BIASES = {
+    "R1": 0.444229,
+    "R2": 0.472397,
+    "R3": 0.286568,
+    "R4": 0.528176,
+    "R5": 0.523372,
+    "R6": 0.488099,
+    "R7": 0.399395,
+    "R8": 0.791101,
+}
 
 @dataclass(frozen=True)
 class VisualSystemOutput:
@@ -51,6 +61,10 @@ class VisualSystem:
 
         self._state: Any = None
         self._initialized = False
+
+    @property
+    def retina_biases(self) -> dict[str, float]:
+        return RETINA_BIASES
 
     @property
     def cell_types(self) -> tuple[str, ...]:
