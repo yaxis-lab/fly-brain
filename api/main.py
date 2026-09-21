@@ -1,23 +1,35 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.core.logging import configure_logging
+from api.routes.health import router as health_router
+from api.routes.simulation import router as simulation_router
+from api.simulation.manager import SimulationManager
+
+
+configure_logging()
 
 
 app = FastAPI(
-    title="MaleCNS Explorer API",
+    title="Fly Brain Simulation API",
     version="1.0.0",
     description=(
-        "Local API for exploring the MaleCNS v1.0 " "connectome and morphology."
+        "REST API for controlling the FlyGym, FlyVis, and Brian2 simulation "
+        "lifecycle."
     ),
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
 )
-
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
+app.state.simulation_manager = SimulationManager()
+app.include_router(health_router)
+app.include_router(simulation_router)
