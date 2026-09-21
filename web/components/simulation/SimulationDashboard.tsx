@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   Activity,
   AlertCircle,
@@ -8,7 +9,6 @@ import {
   Clock3,
   Eye,
   Gauge,
-  LoaderCircle,
   Pause,
   Play,
   Radio,
@@ -19,152 +19,14 @@ import {
   Square,
   TimerReset,
 } from "lucide-react";
-import { useState } from "react";
 
 import { Sidebar } from "@/components/layout/Sidebar";
 import { useSimulation } from "@/hooks/useSimulation";
-import type { SimulationState } from "@/types/simulation";
 import { cn } from "@/utils/cn";
-
-const stateMeta: Record<
-  SimulationState,
-  { label: string; description: string; color: string; dot: string }
-> = {
-  idle: {
-    label: "Ready",
-    description: "Runtime is ready to initialize",
-    color: "text-slate-600",
-    dot: "bg-slate-400",
-  },
-  starting: {
-    label: "Starting",
-    description: "Loading the simulation backend",
-    color: "text-amber-700",
-    dot: "bg-amber-500",
-  },
-  running: {
-    label: "Running",
-    description: "Simulation is advancing in real time",
-    color: "text-emerald-700",
-    dot: "bg-emerald-500",
-  },
-  paused: {
-    label: "Paused",
-    description: "State is held at the current timestep",
-    color: "text-sky-700",
-    dot: "bg-sky-500",
-  },
-  resetting: {
-    label: "Resetting",
-    description: "Restoring the initial network state",
-    color: "text-violet-700",
-    dot: "bg-violet-500",
-  },
-  stopping: {
-    label: "Stopping",
-    description: "Closing the simulation worker",
-    color: "text-orange-700",
-    dot: "bg-orange-500",
-  },
-  stopped: {
-    label: "Stopped",
-    description: "Runtime is closed and ready to start again",
-    color: "text-slate-600",
-    dot: "bg-slate-400",
-  },
-  error: {
-    label: "Needs attention",
-    description: "The simulation reported an error",
-    color: "text-rose-700",
-    dot: "bg-rose-500",
-  },
-};
-
-const transitionStates = new Set<SimulationState>([
-  "starting",
-  "resetting",
-  "stopping",
-]);
-
-function formatSimulationTime(value: number | undefined) {
-  if (value === undefined) return "--:--.---";
-
-  const totalMilliseconds = Math.max(0, Math.round(value * 1000));
-  const milliseconds = totalMilliseconds % 1000;
-  const totalSeconds = Math.floor(totalMilliseconds / 1000);
-  const seconds = totalSeconds % 60;
-  const minutes = Math.floor(totalSeconds / 60);
-
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
-    2,
-    "0",
-  )}.${String(milliseconds).padStart(3, "0")}`;
-}
-
-function formatUpdatedAt(value: string | undefined) {
-  if (!value) return "Awaiting first status";
-
-  return new Intl.DateTimeFormat("en", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-  }).format(new Date(value));
-}
-
-function StatusBadge({ state }: { state: SimulationState }) {
-  const meta = stateMeta[state];
-
-  return (
-    <div
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full border bg-white/80 px-3 py-1.5",
-        "border-slate-200 text-xs font-semibold tracking-wide",
-        meta.color,
-      )}
-    >
-      <span className={cn("size-2 rounded-full", meta.dot)} />
-      {meta.label}
-    </div>
-  );
-}
-
-function ActionButton({
-  children,
-  disabled,
-  loading,
-  onClick,
-  tone = "quiet",
-  icon,
-}: {
-  children: React.ReactNode;
-  disabled?: boolean;
-  loading?: boolean;
-  onClick: () => void;
-  tone?: "primary" | "quiet" | "danger";
-  icon: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={disabled || loading}
-      onClick={onClick}
-      className={cn(
-        "inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold",
-        "transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500/40",
-        "disabled:cursor-not-allowed disabled:opacity-40",
-        tone === "primary" &&
-          "bg-[#163c3b] text-white shadow-[0_8px_20px_-10px_rgba(22,60,59,0.8)] hover:bg-[#1d4f4c]",
-        tone === "quiet" &&
-          "border border-slate-200 bg-white text-slate-700 shadow-sm hover:border-slate-300 hover:bg-slate-50",
-        tone === "danger" &&
-          "border border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100",
-      )}
-    >
-      {loading ? <LoaderCircle className="size-4 animate-spin" /> : icon}
-      {children}
-    </button>
-  );
-}
+import { stateMeta, transitionStates } from "@/utils/simulations/state";
+import { formatSimulationTime, formatUpdatedAt } from "@/utils/formats";
+import { ActionButton } from "../layout/ActionButton";
+import { StatusBadge } from "../layout/StatusBadge";
 
 export function SimulationDashboard() {
   const [visualization, setVisualization] = useState(false);
@@ -173,11 +35,14 @@ export function SimulationDashboard() {
   const state = simulation?.state ?? "idle";
   const meta = stateMeta[state];
   const isTransitioning = transitionStates.has(state);
-  const canStart = Boolean(simulation) && ["idle", "stopped", "error"].includes(state);
+  const canStart =
+    Boolean(simulation) && ["idle", "stopped", "error"].includes(state);
   const canPause = state === "running";
   const canResume = state === "paused";
   const canReset = state === "running" || state === "paused";
-  const canStop = ["starting", "running", "paused", "resetting"].includes(state);
+  const canStop = ["starting", "running", "paused", "resetting"].includes(
+    state,
+  );
   const backendOnline = health.isSuccess;
   const actionError =
     actions.start.error ??
@@ -193,7 +58,7 @@ export function SimulationDashboard() {
       <main className="relative min-h-dvh overflow-hidden pl-17">
         <div className="pointer-events-none absolute inset-x-0 top-0 h-72 bg-[radial-gradient(circle_at_76%_0%,rgba(93,180,166,0.2),transparent_46%),radial-gradient(circle_at_30%_0%,rgba(216,226,235,0.7),transparent_42%)]" />
 
-        <div className="relative mx-auto max-w-[1440px] px-5 py-6 sm:px-8 lg:px-12 lg:py-9">
+        <div className="relative mx-auto max-w-360 px-5 py-6 sm:px-8 lg:px-12 lg:py-9">
           <header className="flex flex-col gap-6 border-b border-slate-200/80 pb-7 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
               <div className="mb-4 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-teal-700">
@@ -204,8 +69,8 @@ export function SimulationDashboard() {
                 A clear window into the runtime.
               </h1>
               <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500 sm:text-[15px]">
-                Start a controlled MaleCNS session, watch its lifecycle, and keep
-                the current state close at hand.
+                Start a controlled MaleCNS session, watch its lifecycle, and
+                keep the current state close at hand.
               </p>
             </div>
 
@@ -231,12 +96,21 @@ export function SimulationDashboard() {
                     <Activity className="size-5" strokeWidth={1.8} />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">Runtime overview</p>
-                    <p className="mt-0.5 text-xs text-slate-400">Live lifecycle telemetry</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      Runtime overview
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      Live lifecycle telemetry
+                    </p>
                   </div>
                 </div>
                 <div className="hidden items-center gap-2 text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400 sm:flex">
-                  <Radio className={cn("size-3.5", state === "running" && "text-emerald-500")} />
+                  <Radio
+                    className={cn(
+                      "size-3.5",
+                      state === "running" && "text-emerald-500",
+                    )}
+                  />
                   {isTransitioning ? "Transitioning" : "Control plane"}
                 </div>
               </div>
@@ -252,8 +126,12 @@ export function SimulationDashboard() {
                     </p>
                   </div>
                   <div className="max-w-xs sm:text-right">
-                    <p className={cn("text-lg font-medium", meta.color)}>{meta.label}</p>
-                    <p className="mt-1 text-sm leading-5 text-slate-500">{meta.description}</p>
+                    <p className={cn("text-lg font-medium", meta.color)}>
+                      {meta.label}
+                    </p>
+                    <p className="mt-1 text-sm leading-5 text-slate-500">
+                      {meta.description}
+                    </p>
                   </div>
                 </div>
 
@@ -266,13 +144,16 @@ export function SimulationDashboard() {
                       state === "error" && "w-1/5 bg-rose-400",
                       ["starting", "resetting", "stopping"].includes(state) &&
                         "w-1/3 animate-pulse bg-violet-400",
-                      ["idle", "stopped"].includes(state) && "w-1/12 bg-slate-300",
+                      ["idle", "stopped"].includes(state) &&
+                        "w-1/12 bg-slate-300",
                     )}
                   />
                 </div>
 
                 <div className="mt-5 flex flex-col gap-2 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
-                  <span>{simulation?.message ?? "Waiting for the simulation API"}</span>
+                  <span>
+                    {simulation?.message ?? "Waiting for the simulation API"}
+                  </span>
                   <span className="flex items-center gap-1.5 whitespace-nowrap">
                     <Clock3 className="size-3.5" />
                     Updated {formatUpdatedAt(simulation?.updated_at)}
@@ -284,7 +165,9 @@ export function SimulationDashboard() {
             <section className="rounded-3xl border border-slate-200/80 bg-[#fbfcfc] p-6 shadow-[0_24px_60px_-44px_rgba(15,23,42,0.35)] sm:p-7">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Command surface</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Command surface
+                  </p>
                   <p className="mt-1 text-xs leading-5 text-slate-400">
                     Lifecycle controls for the active worker.
                   </p>
@@ -313,9 +196,13 @@ export function SimulationDashboard() {
                       )
                     }
                     disabled={(!canPause && !canResume) || isActionPending}
-                    loading={actions.pause.isPending || actions.resume.isPending}
+                    loading={
+                      actions.pause.isPending || actions.resume.isPending
+                    }
                     onClick={() =>
-                      canResume ? actions.resume.mutate() : actions.pause.mutate()
+                      canResume
+                        ? actions.resume.mutate()
+                        : actions.pause.mutate()
                     }
                   >
                     {canResume ? "Resume" : "Pause"}
@@ -394,14 +281,22 @@ export function SimulationDashboard() {
                   <Server className="size-4" strokeWidth={1.8} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Backend connection</p>
-                  <p className="mt-0.5 text-xs text-slate-400">FastAPI control plane</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Backend connection
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    FastAPI control plane
+                  </p>
                 </div>
               </div>
               <div className="mt-6 flex items-end justify-between gap-5">
                 <div>
                   <p className="text-2xl font-medium tracking-tight text-slate-900">
-                    {backendOnline ? "Operational" : health.isError ? "Unavailable" : "Checking"}
+                    {backendOnline
+                      ? "Operational"
+                      : health.isError
+                        ? "Unavailable"
+                        : "Checking"}
                   </p>
                   <p className="mt-1 text-xs text-slate-400">
                     {health.data?.service ?? "fly-brain-api"}
@@ -411,10 +306,16 @@ export function SimulationDashboard() {
                 <div
                   className={cn(
                     "flex size-10 items-center justify-center rounded-full",
-                    backendOnline ? "bg-emerald-50 text-emerald-600" : "bg-slate-100 text-slate-400",
+                    backendOnline
+                      ? "bg-emerald-50 text-emerald-600"
+                      : "bg-slate-100 text-slate-400",
                   )}
                 >
-                  {backendOnline ? <Check className="size-5" /> : <RefreshCw className="size-4" />}
+                  {backendOnline ? (
+                    <Check className="size-5" />
+                  ) : (
+                    <RefreshCw className="size-4" />
+                  )}
                 </div>
               </div>
             </section>
@@ -425,8 +326,12 @@ export function SimulationDashboard() {
                   <TimerReset className="size-4" strokeWidth={1.8} />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Session details</p>
-                  <p className="mt-0.5 text-xs text-slate-400">Current runtime context</p>
+                  <p className="text-sm font-semibold text-slate-900">
+                    Session details
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-400">
+                    Current runtime context
+                  </p>
                 </div>
               </div>
               <div className="mt-6 grid grid-cols-2 gap-5">
