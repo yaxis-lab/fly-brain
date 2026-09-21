@@ -1,6 +1,9 @@
+"use client";
+
 import { cn } from "@/utils/cn";
-import { Home, Network, Waypoints, type LucideIcon } from "lucide-react";
+import { Activity, Home, Network, Waypoints, type LucideIcon } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface NavigationItem {
   label: string;
@@ -28,9 +31,17 @@ const navs: readonly NavigationItem[] = [
     icon: Waypoints,
     disabled: true,
   },
+  {
+    label: "Simulations",
+    href: "/simulations",
+    icon: Activity,
+    disabled: false,
+  },
 ];
 
 export function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <aside
       className={cn(
@@ -68,6 +79,9 @@ export function Sidebar() {
         <nav className="flex-1 space-y-1 px-3 py-3">
           {navs.map((nav) => {
             const Icon = nav.icon;
+            const isActive =
+              !nav.disabled &&
+              (nav.href === "/" ? pathname === "/" : pathname.startsWith(nav.href));
 
             return (
               <Link
@@ -81,6 +95,7 @@ export function Sidebar() {
                   "text-sm font-medium text-zinc-600",
                   "transition-colors",
                   "hover:bg-zinc-200/60 hover:text-zinc-900",
+                  isActive && "bg-zinc-200/70 text-zinc-950",
                   "justify-start gap-3",
                   nav.disabled &&
                     "cursor-not-allowed opacity-60 hover:bg-transparent hover:text-zinc-600",

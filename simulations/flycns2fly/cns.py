@@ -92,6 +92,8 @@ class CNSConfig:
 
 
 class CNS:
+    _INITIAL_STATE = "initial"
+
     def __init__(
         self,
         connectome: Connectome,
@@ -154,6 +156,7 @@ class CNS:
             *self.visual_input.synapses,
         )
         self.poisson_inputs = []
+        self.network.store(self._INITIAL_STATE)
 
     def update_visual_input(
         self,
@@ -201,10 +204,7 @@ class CNS:
         self.network.run(duration)
 
     def reset(self) -> None:
-        self.neurons.v = self.cns_config.v_0
-        self.neurons.g = 0
-        self.neurons.rfc = self.cns_config.t_rfc
-        self.spike_monitor.reinit()
+        self.network.restore(self._INITIAL_STATE)
 
     @property
     def spike_trains(self):
