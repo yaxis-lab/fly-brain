@@ -41,9 +41,13 @@ class SimulationManager:
                 started_at=self._started_at,
             )
 
-    def start(self) -> SimulationStatus:
+    def start(self, *, visualization: bool = False) -> SimulationStatus:
         with self._lock:
-            logger.info("Start requested; current_state=%s", self._state.value)
+            logger.info(
+                "Start requested; current_state=%s visualization=%s",
+                self._state.value,
+                visualization,
+            )
             if self._state in {
                 SimulationState.STARTING,
                 SimulationState.RUNNING,
@@ -61,7 +65,7 @@ class SimulationManager:
                 error=None,
                 preserve_error=False,
             )
-            worker = self._new_worker()
+            worker = self._new_worker(visualization=visualization)
             self._worker = worker
             worker.start()
             return self.status()
@@ -119,9 +123,10 @@ class SimulationManager:
             self._worker.stop()
             return self.status()
 
-    def _new_worker(self) -> SimulationWorker:
+    def _new_worker(self, *, visualization: bool) -> SimulationWorker:
         return SimulationWorker(
             self._factory,
+            visualization=visualization,
             on_started=self._on_started,
             on_tick=self._on_tick,
             on_reset=self._on_reset,

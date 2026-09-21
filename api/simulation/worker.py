@@ -20,7 +20,7 @@ class SimulationBackend(Protocol):
     def close(self) -> None: ...
 
 
-SimulationFactory = Callable[[], SimulationBackend]
+SimulationFactory = Callable[[bool], SimulationBackend]
 StartedCallback = Callable[[], None]
 TickCallback = Callable[[float], None]
 ResetCallback = Callable[[bool, float], None]
@@ -40,8 +40,10 @@ class SimulationWorker:
         on_reset: ResetCallback,
         on_stopped: StoppedCallback,
         on_error: ErrorCallback,
+        visualization: bool = False,
     ) -> None:
         self._factory = factory
+        self._visualization = visualization
         self._on_started = on_started
         self._on_tick = on_tick
         self._on_reset = on_reset
@@ -90,7 +92,7 @@ class SimulationWorker:
         backend: SimulationBackend | None = None
         try:
             logger.info("Simulation backend initialization started")
-            backend = self._factory()
+            backend = self._factory(self._visualization)
             with self._lock:
                 self._backend = backend
 

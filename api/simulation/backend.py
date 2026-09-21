@@ -7,7 +7,7 @@ import brian2  # noqa: F401  # Brian2 installs signal handlers during import.
 logger = logging.getLogger(__name__)
 
 
-def build_default_simulation():
+def build_default_simulation(visualization: bool = False):
     """Build the repository's existing FlyGym/FlyVis/Brian2 simulation."""
 
     logger.info("Building simulation backend")
@@ -85,6 +85,7 @@ def build_default_simulation():
         simulation=Simulation(world),
         fly_name=fly.name,
         cns=cns,
+        visualization=visualization,
     )
     logger.info("Simulation backend ready")
     return simulation

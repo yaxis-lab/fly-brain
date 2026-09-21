@@ -1,10 +1,14 @@
+from typing import TYPE_CHECKING
+
 from flygym import Simulation
 from brian2 import second
 
 from .cns import CNS
 from .sensors.vision import Vision
-from .viewers.vision import VisionViewer
 from .visual_system import VisualSystem
+
+if TYPE_CHECKING:
+    from .viewers.vision import VisionViewer
 
 
 class FlyBrainSimulation:
@@ -14,6 +18,7 @@ class FlyBrainSimulation:
         fly_name: str,
         cns: CNS,
         device: str = "cpu",
+        visualization: bool = False,
     ) -> None:
         self.simulation = simulation
         self.fly_name = fly_name
@@ -23,6 +28,7 @@ class FlyBrainSimulation:
             fly_name=self.fly_name,
         )
         self.visual_system = VisualSystem(device=device)
+        self.visualization = visualization
         self.vision_viewer: VisionViewer | None = None
         self._visual_dt = self.visual_system.DT
         self._next_visual_update = self._visual_dt
@@ -68,15 +74,18 @@ class FlyBrainSimulation:
                 )
             self._printed_visual_stats = True
 
-        if self.vision_viewer is None:
-            self.vision_viewer = VisionViewer(
-                retina=self.vision.retina,
-                cell_type="R1",
+        if self.visualization:
+            if self.vision_viewer is None:
+                from .viewers.vision import VisionViewer
+
+                self.vision_viewer = VisionViewer(
+                    retina=self.vision.retina,
+                    cell_type="R1",
+                )
+            self.vision_viewer.update(
+                vision=vision_input,
+                visual_system=visual_output,
             )
-        self.vision_viewer.update(
-            vision=vision_input,
-            visual_system=visual_output,
-        )
         self._next_visual_update += self._visual_dt
 
     def warmup(self, duration: float) -> None:
@@ -96,10 +105,11 @@ class FlyBrainSimulation:
         self._next_visual_update = self.simulation.time + self.visual_system.DT
 
     def reset(self) -> None:
+        self.simulation.reset()
         self.vision.reset()
         self.visual_system.reset()
         self.cns.reset()
-        self._next_visual_update = self.visual_system.DT
+        self._next_visual_update = self.simulation.time + self.visual_system.DT
 
     def close(self) -> None:
         if self.vision_viewer is not None:

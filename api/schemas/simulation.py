@@ -24,6 +24,10 @@ class SimulationStatus(BaseModel):
     started_at: datetime | None = None
 
 
+class SimulationStartRequest(BaseModel):
+    visualization: bool = False
+
+
 class SimulationCommandResponse(BaseModel):
     state: SimulationState
     message: str

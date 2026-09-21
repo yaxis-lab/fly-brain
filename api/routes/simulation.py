@@ -1,6 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
-from api.schemas.simulation import SimulationCommandResponse, SimulationStatus
+from api.schemas.simulation import (
+    SimulationCommandResponse,
+    SimulationStartRequest,
+    SimulationStatus,
+)
 from api.simulation.manager import SimulationManager, SimulationTransitionError
 
 router = APIRouter(prefix="/simulation", tags=["simulation"])
@@ -30,9 +34,13 @@ def _transition_error(exc: SimulationTransitionError) -> HTTPException:
     status_code=status.HTTP_202_ACCEPTED,
     summary="Start the simulation",
 )
-def start(manager: SimulationManager = Depends(get_manager)) -> SimulationCommandResponse:
+def start(
+    request: SimulationStartRequest | None = None,
+    manager: SimulationManager = Depends(get_manager),
+) -> SimulationCommandResponse:
     try:
-        return _command_response(manager.start())
+        visualization = request.visualization if request is not None else False
+        return _command_response(manager.start(visualization=visualization))
     except SimulationTransitionError as exc:
         raise _transition_error(exc) from exc
 
