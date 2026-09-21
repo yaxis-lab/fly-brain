@@ -4,7 +4,7 @@ import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import * as THREE from "three";
 
 import { CNS_CONFIG } from "../config/cns";
-import type { CNSMesh } from "../../frontend/types/cns";
+import type { CNSMesh } from "@/types/cns";
 
 interface UseFitCameraOptions {
   readonly meshes: readonly CNSMesh[];
