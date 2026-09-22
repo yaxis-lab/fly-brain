@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 import logging
 from threading import RLock
@@ -10,6 +11,8 @@ from api.simulation.worker import SimulationFactory, SimulationWorker
 
 
 logger = logging.getLogger(__name__)
+
+SimulationObserver = Callable[[SimulationStatus, Mapping[str, object] | None], None]
 
 
 class SimulationTransitionError(Exception):
@@ -29,6 +32,11 @@ class SimulationManager:
         self._error: str | None = None
         self._updated_at = self._now()
         self._started_at: datetime | None = None
+        self._observers: set[SimulationObserver] = set()
+
+    def add_observer(self, observer: SimulationObserver) -> None:
+        with self._lock:
+            self._observers.add(observer)
 
     def status(self) -> SimulationStatus:
         with self._lock:
@@ -65,6 +73,7 @@ class SimulationManager:
                 error=None,
                 preserve_error=False,
             )
+            self._notify_observers()
             worker = self._new_worker(visualization=visualization)
             self._worker = worker
             worker.start()
@@ -77,6 +86,7 @@ class SimulationManager:
             assert self._worker is not None
             self._worker.pause()
             self._set_state(SimulationState.PAUSED, "Simulation is paused")
+            self._notify_observers()
             return self.status()
 
     def resume(self) -> SimulationStatus:
@@ -86,6 +96,7 @@ class SimulationManager:
             assert self._worker is not None
             self._worker.resume()
             self._set_state(SimulationState.RUNNING, "Simulation is running")
+            self._notify_observers()
             return self.status()
 
     def reset(self) -> SimulationStatus:
@@ -101,6 +112,7 @@ class SimulationManager:
             assert self._worker is not None
             resume = self._state is SimulationState.RUNNING
             self._set_state(SimulationState.RESETTING, "Resetting the simulation")
+            self._notify_observers()
             self._worker.reset(resume=resume)
             return self.status()
 
@@ -120,6 +132,7 @@ class SimulationManager:
                 )
             assert self._worker is not None
             self._set_state(SimulationState.STOPPING, "Stopping the simulation")
+            self._notify_observers()
             self._worker.stop()
             return self.status()
 
@@ -132,6 +145,7 @@ class SimulationManager:
             on_reset=self._on_reset,
             on_stopped=self._on_stopped,
             on_error=self._on_error,
+            on_observation=self._on_observation,
         )
 
     def _require(self, expected: SimulationState, action: str) -> None:
@@ -145,6 +159,7 @@ class SimulationManager:
             if self._state is SimulationState.STARTING:
                 self._started_at = self._now()
                 self._set_state(SimulationState.RUNNING, "Simulation is running")
+                self._notify_observers()
 
     def _on_tick(self, simulation_time: float) -> None:
         with self._lock:
@@ -158,18 +173,39 @@ class SimulationManager:
                 SimulationState.RUNNING if resume else SimulationState.PAUSED,
                 "Simulation is running" if resume else "Simulation is paused",
             )
+            self._notify_observers()
+
+    def _on_observation(self, observation: Mapping[str, object]) -> None:
+        with self._lock:
+            raw_time = observation.get("simulation_time", self._simulation_time)
+            self._simulation_time = max(0.0, float(raw_time))
+            self._updated_at = self._now()
+            self._notify_observers(observation)
 
     def _on_error(self, exc: Exception) -> None:
         with self._lock:
             self._error = str(exc) or exc.__class__.__name__
             logger.error("Simulation entered error state: %s", self._error)
             self._set_state(SimulationState.ERROR, "Simulation failed")
+            self._notify_observers()
 
     def _on_stopped(self) -> None:
         with self._lock:
             if self._state is not SimulationState.ERROR:
                 self._set_state(SimulationState.STOPPED, "Simulation is stopped")
             self._worker = None
+            self._notify_observers()
+
+    def _notify_observers(
+        self,
+        observation: Mapping[str, object] | None = None,
+    ) -> None:
+        status = self.status()
+        for observer in tuple(self._observers):
+            try:
+                observer(status, observation)
+            except Exception:
+                logger.exception("Simulation observer failed")
 
     def _set_state(
         self,

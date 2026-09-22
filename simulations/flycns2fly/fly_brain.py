@@ -111,6 +111,24 @@ class FlyBrainSimulation:
         self.cns.reset()
         self._next_visual_update = self.simulation.time + self.visual_system.DT
 
+    def realtime_state(self) -> dict[str, object]:
+        return {
+            "simulation_time": self.time,
+            "fly_state": {
+                "body_positions": self.simulation.get_body_positions(
+                    self.fly_name
+                ).tolist(),
+                "body_rotations": self.simulation.get_body_rotations(
+                    self.fly_name
+                ).tolist(),
+                "joint_angles": self.simulation.get_joint_angles(
+                    self.fly_name
+                ).tolist(),
+            },
+            "spike_ids": self.cns.consume_spike_ids(),
+            "total_spike_count": self.cns.total_spike_count,
+        }
+
     def close(self) -> None:
         if self.vision_viewer is not None:
             self.vision_viewer.close()

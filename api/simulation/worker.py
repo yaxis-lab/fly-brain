@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 import logging
 from threading import Event, Lock, Thread
 from typing import Protocol
@@ -26,6 +26,7 @@ TickCallback = Callable[[float], None]
 ResetCallback = Callable[[bool, float], None]
 StoppedCallback = Callable[[], None]
 ErrorCallback = Callable[[Exception], None]
+ObservationCallback = Callable[[Mapping[str, object]], None]
 
 
 class SimulationWorker:
@@ -41,6 +42,8 @@ class SimulationWorker:
         on_stopped: StoppedCallback,
         on_error: ErrorCallback,
         visualization: bool = False,
+        on_observation: ObservationCallback | None = None,
+        observation_interval: float = 0.05,
     ) -> None:
         self._factory = factory
         self._visualization = visualization
@@ -49,6 +52,8 @@ class SimulationWorker:
         self._on_reset = on_reset
         self._on_stopped = on_stopped
         self._on_error = on_error
+        self._on_observation = on_observation or (lambda _observation: None)
+        self._observation_interval = observation_interval
         self._stop = Event()
         self._run = Event()
         self._reset = Event()
@@ -102,6 +107,9 @@ class SimulationWorker:
             self._run.set()
             self._on_started()
             logger.info("Simulation worker is running")
+            next_observation_time = float(backend.time)
+            self._emit_observation(backend)
+            next_observation_time += self._observation_interval
 
             while not self._stop.is_set():
                 if self._reset.is_set():
@@ -110,6 +118,10 @@ class SimulationWorker:
                     logger.info("Resetting simulation backend")
                     backend.reset()
                     self._on_reset(resume, float(backend.time))
+                    self._emit_observation(backend)
+                    next_observation_time = (
+                        float(backend.time) + self._observation_interval
+                    )
                     if not resume:
                         self._run.clear()
                     continue
@@ -119,7 +131,12 @@ class SimulationWorker:
 
                 backend.step()
                 self._step_count += 1
-                self._on_tick(float(backend.time))
+                simulation_time = float(backend.time)
+                self._on_tick(simulation_time)
+                if simulation_time >= next_observation_time:
+                    self._emit_observation(backend)
+                    while next_observation_time <= simulation_time:
+                        next_observation_time += self._observation_interval
                 if self._step_count % 1000 == 0:
                     logger.info(
                         "Simulation progress: steps=%s simulation_time=%.6fs",
@@ -141,3 +158,15 @@ class SimulationWorker:
                 self._backend = None
             self._on_stopped()
             logger.info("Simulation worker stopped")
+
+    def _emit_observation(self, backend: SimulationBackend) -> None:
+        observer = getattr(backend, "realtime_state", None)
+        if observer is None:
+            observation: Mapping[str, object] = {
+                "simulation_time": float(backend.time),
+                "spike_ids": (),
+                "total_spike_count": 0,
+            }
+        else:
+            observation = observer()
+        self._on_observation(observation)
