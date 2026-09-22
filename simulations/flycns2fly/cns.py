@@ -157,6 +157,7 @@ class CNS:
         )
         self.poisson_inputs = []
         self.network.store(self._INITIAL_STATE)
+        self._spike_cursor = 0
 
     def update_visual_input(
         self,
@@ -205,6 +206,20 @@ class CNS:
 
     def reset(self) -> None:
         self.network.restore(self._INITIAL_STATE)
+        self._spike_cursor = 0
+
+    def consume_spike_ids(self) -> list[int]:
+        total_spike_count = int(self.spike_monitor.num_spikes)
+        if total_spike_count < self._spike_cursor:
+            self._spike_cursor = 0
+
+        spike_ids = self.spike_monitor.i[self._spike_cursor : total_spike_count]
+        self._spike_cursor = total_spike_count
+        return [int(neuron_id) for neuron_id in spike_ids]
+
+    @property
+    def total_spike_count(self) -> int:
+        return int(self.spike_monitor.num_spikes)
 
     @property
     def spike_trains(self):

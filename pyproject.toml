@@ -28,4 +28,5 @@ dependencies = [
     "tqdm>=4.70.0",
     "trimesh>=5.1.0",
     "uvicorn>=0.52.4",
+    "websockets>=17.1",
 ]
