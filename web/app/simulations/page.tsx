@@ -4,7 +4,7 @@ import { SimulationDashboard } from "@/components/simulation/SimulationDashboard
 
 export const metadata: Metadata = {
   title: "Simulations · FlyBrain",
-  description: "Control and monitor the MaleCNS simulation runtime.",
+  description: "Explore a live MuJoCo FlyGym simulation in a Three.js browser scene.",
 };
 
 export default function SimulationsPage() {

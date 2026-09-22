@@ -17,7 +17,17 @@ app = FastAPI(
     version="1.0.0",
     description=(
         "REST API for controlling the FlyGym, FlyVis, and Brian2 simulation "
-        "lifecycle."
+        "lifecycle.\n\n"
+        "## Realtime simulation stream\n\n"
+        "Connect a WebSocket client to `ws://localhost:8000/ws/simulation` "
+        "to observe simulation lifecycle events and batched realtime updates. "
+        "REST endpoints remain responsible for starting, pausing, resuming, "
+        "resetting, and stopping the simulation.\n\n"
+        "Realtime update messages include `simulation_time`, `fly_state`, "
+        "`spike_ids`, `spike_count`, `active_neuron_count`, "
+        "`total_spike_count`, and `status`. `spike_ids` contains the neurons "
+        "that fired during the current stream interval.\n\n"
+        "Use `wss://<host>/ws/simulation` when the API is served over HTTPS."
     ),
     docs_url="/docs",
     redoc_url="/redoc",

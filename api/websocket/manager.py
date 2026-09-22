@@ -54,6 +54,7 @@ class SimulationWebSocketManager:
         self._clients: set[_Client] = set()
         self._lock = Lock()
         self._last_event: SimulationRealtimeEvent | None = None
+        self._last_scene = None
 
     def connect(self, loop: asyncio.AbstractEventLoop) -> _Client:
         client = _Client(
@@ -63,6 +64,8 @@ class SimulationWebSocketManager:
         with self._lock:
             self._clients.add(client)
             initial_event = self._last_event
+            if initial_event is not None and initial_event.scene is None:
+                initial_event = initial_event.model_copy(update={"scene": self._last_scene})
 
         if initial_event is None:
             initial_event = status_event(self._status_provider())
@@ -86,11 +89,15 @@ class SimulationWebSocketManager:
         try:
             with self._lock:
                 previous = self._last_event
+                if previous is not None and previous.scene is None:
+                    previous = previous.model_copy(update={"scene": self._last_scene})
                 event = (
                     update_event(status, observation, previous)
                     if observation is not None
                     else status_event(status, previous)
                 )
+                if event.scene is not None:
+                    self._last_scene = event.scene
                 self._last_event = event
                 clients = tuple(self._clients)
 

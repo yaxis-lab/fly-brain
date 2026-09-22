@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -10,6 +10,14 @@ class FlyState(BaseModel):
     body_positions: list[list[float]] = Field(default_factory=list)
     body_rotations: list[list[float]] = Field(default_factory=list)
     joint_angles: list[float] = Field(default_factory=list)
+
+
+class SimulationRealtimeScene(BaseModel):
+    body_segments: list[dict[str, Any]] = Field(default_factory=list)
+    root_segment: str
+    ground: dict[str, Any] = Field(default_factory=dict)
+    camera: dict[str, Any] = Field(default_factory=dict)
+    lights: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class SimulationRealtimeEvent(BaseModel):
@@ -23,3 +31,4 @@ class SimulationRealtimeEvent(BaseModel):
     spike_count: int = Field(default=0, ge=0)
     active_neuron_count: int = Field(default=0, ge=0)
     total_spike_count: int = Field(default=0, ge=0)
+    scene: SimulationRealtimeScene | None = None

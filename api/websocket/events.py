@@ -2,7 +2,11 @@ from collections.abc import Mapping
 from typing import Any
 
 from api.schemas.simulation import SimulationStatus
-from api.schemas.websocket import FlyState, SimulationRealtimeEvent
+from api.schemas.websocket import (
+    FlyState,
+    SimulationRealtimeEvent,
+    SimulationRealtimeScene,
+)
 
 
 def status_event(
@@ -17,6 +21,7 @@ def status_event(
         simulation_time=status.simulation_time,
         fly_state=previous.fly_state if previous is not None else None,
         total_spike_count=previous.total_spike_count if previous is not None else 0,
+        scene=previous.scene if previous is not None else None,
     )
 
 
@@ -49,5 +54,10 @@ def update_event(
                 "total_spike_count",
                 previous.total_spike_count if previous is not None else 0,
             )
+        ),
+        scene=(
+            SimulationRealtimeScene.model_validate(observation["scene"])
+            if observation.get("scene") is not None
+            else None
         ),
     )
