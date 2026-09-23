@@ -10,7 +10,15 @@ export function useSimulationRealtime() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    return connectToSimulation(setEvent, setConnected);
+    return connectToSimulation(
+      (nextEvent) => {
+        setEvent((previousEvent) => ({
+          ...nextEvent,
+          scene: nextEvent.scene ?? previousEvent?.scene ?? null,
+        }));
+      },
+      setConnected,
+    );
   }, []);
 
   return { event, connected };

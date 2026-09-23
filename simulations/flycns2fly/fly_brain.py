@@ -173,7 +173,7 @@ class FlyBrainSimulation:
             "camera": {
                 "position": model.cam_pos0[camera_id].tolist(),
                 "rotation_matrix": model.cam_mat0[camera_id].reshape(3, 3).tolist(),
-                "fov": float(model.cam_fovy[camera_id]),
+                "fov": float(model.vis.global_.fovy),
             },
             "lights": [
                 {

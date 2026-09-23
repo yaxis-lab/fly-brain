@@ -83,7 +83,7 @@ export function SimulationDashboard() {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,transparent_0%,rgba(4,13,11,0.08)_44%,rgba(4,13,11,0.56)_100%)]" />
         <div className="pointer-events-none absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-[#071210]/90 to-transparent" />
 
-        <header className="relative z-10 flex items-start justify-between gap-5 px-6 py-5 sm:px-9 lg:px-12">
+        <header className="pointer-events-none relative z-10 flex items-start justify-between gap-5 px-6 py-5 sm:px-9 lg:px-12">
           <div>
             <div className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.24em] text-emerald-300/75">
               <span className="size-1.5 rounded-full bg-emerald-300 shadow-[0_0_14px_rgba(110,231,183,0.8)]" />
@@ -108,9 +108,9 @@ export function SimulationDashboard() {
           </div>
         </header>
 
-        <div className="relative z-10 flex min-h-[calc(100dvh-100px)] flex-col justify-between gap-8 px-6 pb-6 sm:px-9 sm:pb-9 lg:px-12">
+        <div className="pointer-events-none relative z-10 flex min-h-[calc(100dvh-100px)] flex-col justify-between gap-8 px-6 pb-6 sm:px-9 sm:pb-9 lg:px-12">
           <div className="flex justify-end">
-            <aside className="w-full max-w-90 rounded-3xl border border-white/10 bg-[#0a1815]/78 p-5 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:p-6">
+            <aside className="pointer-events-auto w-full max-w-90 rounded-3xl border border-white/10 bg-[#0a1815]/78 p-5 shadow-2xl shadow-black/20 backdrop-blur-2xl sm:p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="flex size-9 items-center justify-center rounded-2xl bg-emerald-300/10 text-emerald-200">
@@ -192,6 +192,7 @@ export function SimulationDashboard() {
                 Tracking camera
               </div>
               <p className="mt-2 text-sm text-white/70">MuJoCo body transforms are streamed into the Three.js scene.</p>
+              <p className="mt-2 text-[11px] text-white/35">Drag to orbit · Shift-drag to pan · Scroll to zoom</p>
             </div>
 
             <div className="grid grid-cols-2 gap-x-7 gap-y-4 rounded-2xl border border-white/8 bg-[#0a1815]/62 px-5 py-4 backdrop-blur-xl sm:grid-cols-4">
